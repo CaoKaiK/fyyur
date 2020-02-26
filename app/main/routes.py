@@ -1,9 +1,15 @@
+import json
+import dateutil.parser
+import babel
+
+from flask import Flask, render_template, request, Response, flash, redirect, url_for
 from flask import render_template
 
-from app.models import Venue, Artist
-from app.forms import VenueForm, ArtistForm, ShowForm
-
 from app.main import bp
+from .models import Venue, Artist
+from .forms import VenueForm, ArtistForm, ShowForm
+
+
 
 
 
@@ -40,7 +46,7 @@ def venues():
       "num_upcoming_shows": 0,
     }]
   }]
-  return render_template('pages/venues.html', areas=data);
+  return render_template('pages/venues.html', areas=data)
 
 @bp.route('/venues/search', methods=['POST'])
 def search_venues():
