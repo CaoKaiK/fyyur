@@ -2,11 +2,13 @@ import json
 import dateutil.parser
 import babel
 
-from flask import Flask, render_template, request, Response, flash, redirect, url_for
+from flask import Flask, render_template, request, Response, flash, redirect, url_for, jsonify
 from flask import render_template
+from sqlalchemy import func
 
 from app.main import bp
-from .models import Venue, Artist
+from .models import Venue, Artist, Show
+from .models import VenueSchema, VenueSearchSchema, ArtistSearchSchema
 from .forms import VenueForm, ArtistForm, ShowForm
 
 
@@ -23,37 +25,39 @@ def index():
 
 @bp.route('/venues')
 def venues():
-  # TODO: replace with real venues data.
-  #       num_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
-    "city": "San Francisco",
-    "state": "CA",
-    "venues": [{
-      "id": 1,
-      "name": "The Musical Hop",
-      "num_upcoming_shows": 0,
-    }, {
-      "id": 3,
-      "name": "Park Square Live Music & Coffee",
-      "num_upcoming_shows": 1,
-    }]
-  }, {
-    "city": "New York",
-    "state": "NY",
-    "venues": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }]
-  return render_template('pages/venues.html', areas=data)
+  # get locations with distinct city and state
+  venue_locations = Venue.query.distinct(Venue.city, Venue.state).all()
+  return render_template('pages/venues.html', areas=venue_locations)
 
 @bp.route('/venues/search', methods=['POST'])
 def search_venues():
+  search_term = request.form.get('search_term', '')
+
+  data = Venue.query.filter(Venue.name.ilike(f'%{search_term}%')).all()
+  
+  search_schema = VenueSearchSchema(many=True)
+  json = search_schema.dumps(data)
+
+  response={
+    "count": len(data),
+    "data": json
+  }
+
+  print(response)
+
+  #data.count = len(data)
+  #Venue.name.contains(search_term)).all()
+  
+  
+  print(len(data))
+  print(data)
+
+
+  
   # TODO: implement search on artists with partial string search. Ensure it is case-insensitive.
   # seach for Hop should return "The Musical Hop".
   # search for "Music" should return "The Musical Hop" and "Park Square Live Music & Coffee"
-  response={
+  rresponse={
     "count": 1,
     "data": [{
       "id": 2,
@@ -61,7 +65,7 @@ def search_venues():
       "num_upcoming_shows": 0,
     }]
   }
-  return render_template('pages/search_venues.html', results=response, search_term=request.form.get('search_term', ''))
+  return render_template('pages/search_venues.html', results=response, search_term=search_term)
 
 @bp.route('/venues/<int:venue_id>')
 def show_venue(venue_id):
@@ -180,18 +184,8 @@ def delete_venue(venue_id):
 #  ----------------------------------------------------------------
 @bp.route('/artists')
 def artists():
-  # TODO: replace with real data returned from querying the database
-  data=[{
-    "id": 4,
-    "name": "Guns N Petals",
-  }, {
-    "id": 5,
-    "name": "Matt Quevedo",
-  }, {
-    "id": 6,
-    "name": "The Wild Sax Band",
-  }]
-  return render_template('pages/artists.html', artists=data)
+  result = Artist.query.all()
+  return render_template('pages/artists.html', artists=result)
 
 @bp.route('/artists/search', methods=['POST'])
 def search_artists():

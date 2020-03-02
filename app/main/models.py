@@ -1,7 +1,6 @@
-from app import db
+from app import db, ma
 
 class Venue(db.Model):
-    __tablename__ = 'venue'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
@@ -18,11 +17,35 @@ class Venue(db.Model):
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.String(120))
 
-    shows = db.relationship('show', foreign_keys='show.venue_id', backref='venue', lazy=True)
+
+
+    @property
+    def venues(self):
+        # get venues subset for city and state
+        query = self.query.filter_by(city=self.city, state=self.state).all()
+        return query
+
+    def __repr__(self):
+        return f'<Venue {self.name}>'
+
+
+class VenueSchema(ma.SQLAlchemySchema):
+    class Meta:
+        model = Venue
+    
+    city = ma.auto_field()
+    state = ma.auto_field()
+
+class VenueSearchSchema(ma.SQLAlchemySchema):
+    class Meta:
+        model = Venue
+    
+    id = ma.auto_field()
+    name = ma.auto_field()
+
 
 
 class Artist(db.Model):
-    __tablename__ = 'artist'
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String)
@@ -38,12 +61,30 @@ class Artist(db.Model):
     seeking_venue = db.Column(db.Boolean)
     seeking_description = db.Column(db.String(120))
 
-    shows = db.relationship('show', foreign_keys='show.artist_id', backref='artist', lazy=True)
+    
+    def __repr__(self):
+        return f'<Artist {self.name}>'
+
+class ArtistSearchSchema(ma.SQLAlchemySchema):
+    class Meta:
+        model = Artist
+    
+    id = ma.auto_field()
+    name = ma.auto_field()
+
 
 class Show(db.Model):
     __tablename__ = 'show'
 
     id = db.Column(db.Integer, primary_key=True)
-    venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'), nullable=False)
-    artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'), nullable=False)
     start_time = db.Column(db.DateTime())
+
+    venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'), nullable=False)
+    venue = db.relationship('Venue', backref=db.backref('shows'))
+    
+    artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'), nullable=False)
+    artist = db.relationship('Artist', backref=db.backref('shows'))
+
+    
+    def __repr__(self):
+        return f'<Show {self.id}>'
