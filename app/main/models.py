@@ -1,4 +1,8 @@
+from datetime import datetime
+
 from app import db, ma
+
+#CURRENT_TIME = datetime.now
 
 class Venue(db.Model):
 
@@ -17,13 +21,32 @@ class Venue(db.Model):
     seeking_talent = db.Column(db.Boolean)
     seeking_description = db.Column(db.String(120))
 
-
-
     @property
     def venues(self):
         # get venues subset for city and state
         query = self.query.filter_by(city=self.city, state=self.state).all()
         return query
+
+    @property
+    def past_shows(self):
+        # filter for venue id and check start time in past
+        query = Show.query.filter_by(venue_id=self.id).filter(Show.start_time<datetime.now()).all()
+        return query
+    
+    @property
+    def past_shows_count(self):
+        return len(self.past_shows)
+
+    @property
+    def upcoming_shows(self):
+        # filter for venue id and check start time in future
+        query = Show.query.filter_by(venue_id=self.id).filter(Show.start_time>datetime.now()).all()
+        return query
+
+    @property
+    def upcoming_shows_count(self):
+        return len(self.upcoming_shows)
+   
 
     def __repr__(self):
         return f'<Venue {self.name}>'
@@ -52,7 +75,7 @@ class Artist(db.Model):
     city = db.Column(db.String(120))
     state = db.Column(db.String(120))
     phone = db.Column(db.String(120))
-    genres = db.Column(db.String(120))
+    genres = db.Column(db.ARRAY(db.String))
     image_link = db.Column(db.String(500))
     facebook_link = db.Column(db.String(120))
 
@@ -85,6 +108,17 @@ class Show(db.Model):
     artist_id = db.Column(db.Integer, db.ForeignKey('artist.id'), nullable=False)
     artist = db.relationship('Artist', backref=db.backref('shows'))
 
+    @property
+    def venue_name(self):
+        return self.venue.name
+    
+    @property
+    def artist_name(self):
+        return self.artist.name
+    
+    @property
+    def artist_image_link(self):
+        return self.artist.artist_image_link
     
     def __repr__(self):
         return f'<Show {self.id}>'
