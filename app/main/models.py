@@ -84,6 +84,26 @@ class Artist(db.Model):
     seeking_venue = db.Column(db.Boolean)
     seeking_description = db.Column(db.String(120))
 
+    @property
+    def past_shows(self):
+        # filter for venue id and check start time in past
+        query = Show.query.filter_by(venue_id=self.id).filter(Show.start_time<datetime.now()).all()
+        return query
+    
+    @property
+    def past_shows_count(self):
+        return len(self.past_shows)
+
+    @property
+    def upcoming_shows(self):
+        # filter for venue id and check start time in future
+        query = Show.query.filter_by(venue_id=self.id).filter(Show.start_time>datetime.now()).all()
+        return query
+
+    @property
+    def upcoming_shows_count(self):
+        return len(self.upcoming_shows)
+
     
     def __repr__(self):
         return f'<Artist {self.name}>'
